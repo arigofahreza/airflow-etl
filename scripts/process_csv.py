@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 import os
 
 from utils.helpers import validate_row
+from dotenv import load_dotenv
 
 
 def read_csv_from_minio(minio_client, bucket, object_name):
@@ -17,6 +18,7 @@ def read_csv_from_minio(minio_client, bucket, object_name):
 
 
 def process_folder(folder_name):
+    load_dotenv()
     # Connect MinIO
     minio_client = Minio(
         os.getenv("MINIO_ENDPOINT"),
@@ -41,22 +43,21 @@ def process_folder(folder_name):
         print("⚠ No CSV found in folder")
         return
 
-    # Gabung semua CSV dalam folder (STT2 replace STT1 by stt_number)
     df = pd.concat(dfs, ignore_index=True)
-    df = df.drop_duplicates(subset=["stt_number"], keep="last")
+    df = df.drop_duplicates(subset=["number"], keep="last")
 
     # Drop incomplete rows
     df = df[df.apply(validate_row, axis=1)]
 
     # Debit (C)
     debit = df[df['client_type'] == 'C'].groupby(['date', 'client_code']) \
-        .agg(stt_count=('stt_number', 'count'),
+        .agg(stt_count=('number', 'count'),
              debit=('amount', 'sum')) \
         .reset_index()
 
     # Credit (V)
     credit = df[df['client_type'] == 'V'].groupby(['date', 'client_code']) \
-        .agg(stt_count=('stt_number', 'count'),
+        .agg(stt_count=('number', 'count'),
              credit=('amount', 'sum')) \
         .reset_index()
 
@@ -77,3 +78,7 @@ def process_folder(folder_name):
     )
 
     print("✅ Billing result inserted to PostgreSQL successfully.")
+
+
+if __name__ == '__main__':
+    process_folder('upload')
