@@ -11,7 +11,7 @@ from scripts.process_csv import minio_retrieve, transform_data, ingest_data
 
 with DAG(
         dag_id="billing_etl_minio_postgres_folder",
-        start_date='@daily',
+        schedule='@once',
         catchup=False,
         tags=["billing"],
 ):
