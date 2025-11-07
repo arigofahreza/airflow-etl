@@ -30,16 +30,19 @@ with DAG(
     minio_task = PythonOperator(
         task_id="minio_retrieve",
         python_callable=task_minio_retrieve,
+        provide_context=True
     )
 
     transform_task = PythonOperator(
         task_id='transform_data',
-        python_callable=task_transform_data
+        python_callable=task_transform_data,
+        provide_context=True
     )
 
     ingest_task = PythonOperator(
         task_id='ingest_data',
-        python_callable=task_ingest_data
+        python_callable=task_ingest_data,
+        provide_context=True
     )
 
     minio_task >> transform_task >> ingest_task
