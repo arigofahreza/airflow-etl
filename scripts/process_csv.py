@@ -80,6 +80,6 @@ def transform_data(ti):
     final['stt_count'] = final['stt_count_x'].combine_first(final['stt_count_y'])
     final = final[['date', 'client_code', 'stt_count', 'debit', 'credit']]
     final = final.replace({np.nan: None})
-    context["ti"].xcom_push(key="final", value=final)
+    ti.xcom_push(key="final", value=final)
 
 
