@@ -1,12 +1,13 @@
-from airflow import DAG
 import os
-from airflow.providers.standard.operators.python import PythonOperator
 import sys
-from scripts.process_csv import minio_retrieve, transform_data, ingest_data
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
+from airflow import DAG
+from airflow.providers.standard.operators.python import PythonOperator
+
+from scripts.process_csv import minio_retrieve, transform_data, ingest_data
 
 with DAG(
         dag_id="billing_etl_minio_postgres_folder",
