@@ -1,23 +1,40 @@
 from airflow import DAG
-from datetime import datetime
 
 from airflow.providers.standard.operators.python import PythonOperator
 
-from scripts.process_csv import process_folder
+from scripts.process_csv import minio_retrieve, transform_data, ingest_data
 
 with DAG(
         dag_id="billing_etl_minio_postgres_folder",
-        start_date=datetime(2025, 1, 1),
+        start_date='@daily',
         catchup=False,
         tags=["billing"],
 ):
-    def task_process_folder():
-        process_folder(folder_name="upload")
+    def task_minio_retrieve():
+        minio_retrieve('upload')
 
 
-    process_task = PythonOperator(
-        task_id="process_minio_folder",
-        python_callable=task_process_folder,
+    def task_transform_data():
+        transform_data()
+
+
+    def task_ingest_data():
+        ingest_data()
+
+
+    minio_task = PythonOperator(
+        task_id="minio_retrieve",
+        python_callable=task_minio_retrieve,
     )
 
-    process_task
+    transform_task = PythonOperator(
+        task_id='transform_data',
+        python_callable=task_transform_data
+    )
+
+    ingest_task = PythonOperator(
+        task_id='ingest_data',
+        python_callable=task_ingest_data
+    )
+
+    minio_task >> transform_task >> ingest_task
