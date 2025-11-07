@@ -10,7 +10,7 @@ from utils.helpers import validate_row
 from dotenv import load_dotenv
 
 
-def minio_retrieve(folder_name: str, **context):
+def minio_retrieve(folder_name: str, ti):
     load_dotenv()
     minio_client = Minio(
         os.getenv("MINIO_ENDPOINT"),
@@ -31,7 +31,7 @@ def minio_retrieve(folder_name: str, **context):
             dfs.append(df)
     if not dfs:
         print("No CSV found in folder")
-    context["ti"].xcom_push(key="dfs", value=dfs)
+    ti.xcom_push(key="dfs", value=dfs)
 
 
 def read_csv_from_minio(minio_client, bucket, object_name):
@@ -43,13 +43,13 @@ def read_csv_from_minio(minio_client, bucket, object_name):
     return pd.read_csv(BytesIO(data))
 
 
-def ingest_data(**context):
+def ingest_data(ti):
     load_dotenv()
     postgres_engine = create_engine(
         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
         f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
     )
-    data = context["ti"].xcom_pull(task_ids="transform_data", key='final')
+    data = ti.xcom_pull(task_ids="transform_data", key='final')
     data.to_sql(
         name="billing_table",
         con=postgres_engine,
@@ -59,8 +59,8 @@ def ingest_data(**context):
     print("Billing result inserted to PostgreSQL successfully.")
 
 
-def transform_data(**context):
-    datas = context["ti"].xcom_pull(task_ids="minio_retrieve", key='dfs')
+def transform_data(ti):
+    datas = ti.xcom_pull(task_ids="minio_retrieve", key='dfs')
     df = pd.concat(datas, ignore_index=True)
     df = df.drop_duplicates(subset=["number"], keep="last")
 
